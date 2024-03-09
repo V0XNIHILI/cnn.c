@@ -1,6 +1,8 @@
 #ifndef NN_H
 #define NN_H
 
+#include <stdbool.h>
+
 #include "tensor.h"
 
 Tensor *remove_batch_size_if_present_from_3d_tensor(Tensor *t, bool has_batch_dim);
