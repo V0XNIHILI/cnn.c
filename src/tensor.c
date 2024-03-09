@@ -147,4 +147,3 @@ Tensor *add_tensors(const Tensor *a, const Tensor *b) {
 
     return output;
 }
-
