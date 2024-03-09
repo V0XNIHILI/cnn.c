@@ -43,7 +43,7 @@ Tensor *remove_batch_size_if_present_from_1d_tensor(Tensor *t, bool has_batch_di
     }
 }
 
-
+// CHECKED
 Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, size_t stride) {
     assert(input != NULL);
     assert(weight != NULL);
@@ -60,11 +60,9 @@ Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, s
 
     size_t output_channels = weight->dims[0];
     size_t weight_input_channels = weight->dims[1];
-    size_t kernel_height = weight->dims[1];
-    size_t kernel_width = weight->dims[2];
+    size_t kernel_height = weight->dims[2];
+    size_t kernel_width = weight->dims[3];
     size_t bias_size = bias->dims[0];
-
-    size_t num_output_dims = has_batch_dim ? 4 : 3;
 
     assert(weight->n_dims == 4);
     assert(input_channels == weight_input_channels);
@@ -75,7 +73,7 @@ Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, s
     size_t output_width = (input_width - kernel_width) / stride + 1;
 
     size_t output_dims[] = {batch_size, output_channels, output_height, output_width};
-    Tensor *output = create_tensor(num_output_dims, output_dims);
+    Tensor *output = create_tensor(4, output_dims);
 
     for (size_t b = 0; b < batch_size; b++) {
         for (size_t i = 0; i < output_channels; i++) {
@@ -124,8 +122,6 @@ Tensor *max_pool_2d(const Tensor *input, size_t pool_size, size_t stride) {
     size_t input_channels = input->dims[0+has_batch_dim];
     size_t input_height = input->dims[1+has_batch_dim];
     size_t input_width = input->dims[2+has_batch_dim];
-    
-    size_t num_output_dims = has_batch_dim ? 4 : 3;
 
     size_t output_height = (input->dims[1] - pool_size) / stride + 1;
     size_t output_width = (input->dims[2] - pool_size) / stride + 1;
