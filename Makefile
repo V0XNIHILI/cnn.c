@@ -8,6 +8,7 @@ CC = gcc
 CPPFLAGS = -g -Wall -Werror -Wextra -Wno-unused-parameter -Wshadow -Wdouble-promotion -Wformat=2 -Wno-unused-variable -Wno-unused-result -fno-common -Wconversion  -Wno-missing-field-initializers -Werror=implicit-function-declaration -pedantic
 OBJS = src/example.c src/tensor.c src/nn.c
 TARGET = example.o
+CPPFLAGS_FOR_SPEED = -flto -O3 -fomit-frame-pointer -march=native
 
 .PHONY: compile run valgrind clean
 
@@ -15,6 +16,9 @@ default: run
 
 compile : $(OBJS)
 	$(CC) $(OBJS) $(CPPFLAGS) -o $(TARGET)
+
+speed: $(OBJS)
+	$(CC) $(OBJS) $(CPPFLAGS_FOR_SPEED) -o $(TARGET)
 
 run: compile
 	./example.o
