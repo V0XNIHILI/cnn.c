@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
 
     // Test linear layer
 
-    size_t tensor_dims2 [] = {3};
-    Tensor *input2 = create_tensor(1, tensor_dims2);
+    size_t tensor_dims2 [] = {2, 3};
+    Tensor *input2 = create_tensor(2, tensor_dims2);
 
     load_tensor_from_file("src/data.bin", input2);
 
@@ -66,6 +66,25 @@ int main(int argc, char *argv[]) {
     Tensor *output3 = relu(input2);
 
     printf("OUTPUT3 BELOW \n");
+
+    // Try conv2d
+
+    Tensor *conv_weight = create_tensor_from_file("src/conv2d_weight.bin", 4, (size_t[]) {4, 3, 5, 5});
+    Tensor *conv_bias = create_tensor_from_file("src/conv2d_bias.bin", 1, (size_t[]) {4});
+    Tensor *conv_input = create_tensor_from_file("src/conv2d_input.bin", 4, (size_t[]) {1, 3, 6, 6});
+
+    Tensor *conv_output = conv_2d(conv_input, conv_weight, conv_bias, 2);
+
+    float val3 = get_tensor_entry_value(conv_input, (size_t[]) {0, 0, 1, 1});
+    printf("VAL: %f\n", (double)val3);
+
+    printf("CONV_OUTPUT BELOW \n");
+    print_tensor(conv_output);
+
+    destroy_tensor(conv_output);
+    destroy_tensor(conv_input);
+    destroy_tensor(conv_weight);
+    destroy_tensor(conv_bias);
 
     print_tensor(output3);
 
