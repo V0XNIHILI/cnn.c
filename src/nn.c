@@ -123,8 +123,8 @@ Tensor *max_pool_2d(const Tensor *input, size_t pool_size, size_t stride) {
     size_t input_height = input->dims[1+has_batch_dim];
     size_t input_width = input->dims[2+has_batch_dim];
 
-    size_t output_height = (input->dims[1] - pool_size) / stride + 1;
-    size_t output_width = (input->dims[2] - pool_size) / stride + 1;
+    size_t output_height = (input_height - pool_size) / stride + 1;
+    size_t output_width = (input_width - pool_size) / stride + 1;
 
     size_t output_dims[] = {batch_size, input_channels, output_height, output_width};
     Tensor *output = create_tensor(4, output_dims);
@@ -139,9 +139,22 @@ Tensor *max_pool_2d(const Tensor *input, size_t pool_size, size_t stride) {
 
                     for (size_t l = 0; l < pool_size; l++) {
                         for (size_t m = 0; m < pool_size; m++) {
-                            size_t current_input_index = get_tensor_entry_index(input, (size_t[]) {b, i, j * stride + l, k * stride + m});
+                            size_t current_input_indices[4];
 
-                            max_value = max_value > input->data[current_input_index] ? max_value : input->data[current_input_index];
+                            if (has_batch_dim) {
+                                current_input_indices[0] = b;
+                                current_input_indices[1] = i;
+                                current_input_indices[2] = j * stride + l;
+                                current_input_indices[3] = k * stride + m;
+                            } else {
+                                current_input_indices[0] = i;
+                                current_input_indices[1] = j * stride + l;
+                                current_input_indices[2] = k * stride + m;
+                            }
+
+                            float current_value = get_tensor_entry_value(input, current_input_indices);
+
+                            max_value = max_value > current_value ? max_value : current_value;
                         }
                     }
 
@@ -169,11 +182,11 @@ Tensor *relu (const Tensor *input) {
     return output;
 }
 
-Tensor *conv_relu_max_pool_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, size_t stride, size_t pool_size) {
-    Tensor *conv = conv_2d(input, weight, bias, stride);
+Tensor *conv_relu_max_pool_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, size_t conv_stride, size_t pool_size, size_t pool_stride) {
+    Tensor *conv = conv_2d(input, weight, bias, conv_stride);
     Tensor *relu_tensor = relu(conv);
     destroy_tensor(conv);
-    Tensor *max_pool = max_pool_2d(relu_tensor, pool_size, stride);
+    Tensor *max_pool = max_pool_2d(relu_tensor, pool_size, pool_stride);
     destroy_tensor(relu_tensor);
 
     return max_pool;
