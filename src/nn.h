@@ -2,6 +2,7 @@
 #define NN_H
 
 #include <stdbool.h>
+#include <omp.h>
 
 #include "tensor.h"
 

@@ -75,17 +75,18 @@ Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, s
     size_t output_dims[] = {batch_size, output_channels, output_height, output_width};
     Tensor *output = create_tensor(4, output_dims);
 
-    for (size_t b = 0; b < batch_size; b++) {
-        for (size_t i = 0; i < output_channels; i++) {
-            for (size_t j = 0; j < output_height; j++) {
-                for (size_t k = 0; k < output_width; k++) {
-                    size_t current_output_index = get_tensor_entry_index(output, (size_t[]) {b, i, j, k});
+    size_t i;
+    #pragma omp parallel for private (i)
+    for (i = 0; i < output_channels; i++) {
+        for (size_t n = 0; n < input_channels; n++) {
+            for (size_t l = 0; l < kernel_height; l++) {
+                for (size_t m = 0; m < kernel_width; m++) {
+                    float current_weight = get_tensor_entry_value(weight, (size_t[]) {i, n, l, m});
+                    bool set_bias = n == 0 && l == 0 && m == 0;
 
-                    output->data[current_output_index] = bias->data[i];
-
-                    for (size_t l = 0; l < kernel_height; l++) {
-                        for (size_t m = 0; m < kernel_width; m++) {
-                            for (size_t n = 0; n < input_channels; n++) {
+                    for (size_t b = 0; b < batch_size; b++) {
+                        for (size_t j = 0; j < output_height; j++) {
+                            for (size_t k = 0; k < output_width; k++) {
                                 size_t current_input_indices[4];
 
                                 if (has_batch_dim) {
@@ -99,7 +100,13 @@ Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, s
                                     current_input_indices[2] = k * stride + m;
                                 }
 
-                                output->data[current_output_index] += get_tensor_entry_value(input, current_input_indices) * get_tensor_entry_value(weight, (size_t[]) {i, n, l, m});
+                                size_t current_output_index = get_tensor_entry_index(output, (size_t[]) {b, i, j, k});
+
+                                if (set_bias) {
+                                    output->data[current_output_index] = bias->data[i];
+                                }
+
+                                output->data[current_output_index] += get_tensor_entry_value(input, current_input_indices) * current_weight;
                             }
                         }
                     }
