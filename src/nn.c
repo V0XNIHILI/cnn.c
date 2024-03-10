@@ -1,3 +1,4 @@
+#include "nn.h"
 #include "tensor.h"
 
 Tensor *remove_batch_size_if_present_from_3d_tensor(Tensor *t, bool has_batch_dim) {
@@ -58,14 +59,16 @@ Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, s
     size_t input_height = input->dims[1+has_batch_dim];
     size_t input_width = input->dims[2+has_batch_dim];
 
+    assert(weight->n_dims == 4);
+
     size_t output_channels = weight->dims[0];
     size_t weight_input_channels = weight->dims[1];
     size_t kernel_height = weight->dims[2];
     size_t kernel_width = weight->dims[3];
     size_t bias_size = bias->dims[0];
 
-    assert(weight->n_dims == 4);
     assert(input_channels == weight_input_channels);
+
     assert(bias->n_dims == 1);
     assert(bias_size == output_channels);
 
@@ -89,24 +92,20 @@ Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, s
                             for (size_t k = 0; k < output_width; k++) {
                                 size_t current_input_indices[4];
 
-                                if (has_batch_dim) {
-                                    current_input_indices[0] = b;
-                                    current_input_indices[1] = n;
-                                    current_input_indices[2] = j * stride + l;
-                                    current_input_indices[3] = k * stride + m;
-                                } else {
-                                    current_input_indices[0] = n;
-                                    current_input_indices[1] = j * stride + l;
-                                    current_input_indices[2] = k * stride + m;
-                                }
+                                current_input_indices[0] = b;
+                                current_input_indices[0+has_batch_dim] = n;
+                                current_input_indices[1+has_batch_dim] = j * stride + l;
+                                current_input_indices[2+has_batch_dim] = k * stride + m;
 
                                 size_t current_output_index = get_tensor_entry_index(output, (size_t[]) {b, i, j, k});
 
-                                if (set_bias) {
-                                    output->data[current_output_index] = bias->data[i];
-                                }
+                                float new_value = get_tensor_entry_value(input, current_input_indices) * current_weight;
 
-                                output->data[current_output_index] += get_tensor_entry_value(input, current_input_indices) * current_weight;
+                                if (set_bias) {
+                                    output->data[current_output_index] = new_value + bias->data[i];
+                                } else {
+                                    output->data[current_output_index] += new_value;
+                                }                                
                             }
                         }
                     }
@@ -118,6 +117,7 @@ Tensor *conv_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, s
     return remove_batch_size_if_present_from_3d_tensor(output, has_batch_dim);
 }
 
+// CHECKED
 Tensor *max_pool_2d(const Tensor *input, size_t pool_size, size_t stride) {
     assert(input != NULL);
 
@@ -148,16 +148,10 @@ Tensor *max_pool_2d(const Tensor *input, size_t pool_size, size_t stride) {
                         for (size_t m = 0; m < pool_size; m++) {
                             size_t current_input_indices[4];
 
-                            if (has_batch_dim) {
-                                current_input_indices[0] = b;
-                                current_input_indices[1] = i;
-                                current_input_indices[2] = j * stride + l;
-                                current_input_indices[3] = k * stride + m;
-                            } else {
-                                current_input_indices[0] = i;
-                                current_input_indices[1] = j * stride + l;
-                                current_input_indices[2] = k * stride + m;
-                            }
+                            current_input_indices[0] = b;
+                            current_input_indices[0+has_batch_dim] = i;
+                            current_input_indices[1+has_batch_dim] = j * stride + l;
+                            current_input_indices[2+has_batch_dim] = k * stride + m;
 
                             float current_value = get_tensor_entry_value(input, current_input_indices);
 
@@ -242,12 +236,15 @@ Tensor *linear(const Tensor *input, const Tensor *weight, const Tensor *bias) {
 
     size_t batch_size = has_batch_dim ? input->dims[0] : 1;
     size_t input_size = input->dims[0+has_batch_dim];
+
+    assert(weight->n_dims == 2);
+
     size_t output_size = weight->dims[0];
     size_t weight_input_size = weight->dims[1];
     size_t bias_size = bias->dims[0];
 
-    assert(weight->n_dims == 2);
     assert(input_size == weight_input_size);
+
     assert(bias->n_dims == 1);
     assert(bias_size == output_size);
 
@@ -257,15 +254,17 @@ Tensor *linear(const Tensor *input, const Tensor *weight, const Tensor *bias) {
 
     for (size_t b = 0; b < batch_size; b++) {
         for (size_t i = 0; i < output_size; i++) {
-            size_t current_output_index = get_tensor_entry_index(output, (size_t[]) {b, i});
-
-            output->data[current_output_index] = bias->data[i];
+            float new_value = 0.0;
 
             for (size_t j = 0; j < input_size; j++) {
                 // In the case of a 1D tensor, the batch dimension is not present
                 // Also, in this case the second index will be ignored
-                output->data[current_output_index] += get_tensor_entry_value(input, (size_t []) {has_batch_dim ? b : j, j}) * get_tensor_entry_value(weight, (size_t []) {i, j});
+                new_value += get_tensor_entry_value(input, (size_t []) {has_batch_dim ? b : j, j}) * get_tensor_entry_value(weight, (size_t []) {i, j});
             }
+
+            size_t current_output_index = get_tensor_entry_index(output, (size_t[]) {b, i});
+
+            output->data[current_output_index] = new_value + bias->data[i];
         }
     }
 

@@ -73,13 +73,27 @@ int main(int argc, char *argv[]) {
     Tensor *conv_bias = create_tensor_from_file("src/conv2d_bias.bin", 1, (size_t[]) {4});
     Tensor *conv_input = create_tensor_from_file("src/conv2d_input.bin", 4, (size_t[]) {1, 3, 6, 6});
 
-    Tensor *conv_output = conv_2d(conv_input, conv_weight, conv_bias, 2);
+    // Tensor *conv_weight = create_tensor_from_file("src/conv2d_weight.bin", 4, (size_t[]) {256, 128, 5, 5});
+    // Tensor *conv_bias = create_tensor_from_file("src/conv2d_bias.bin", 1, (size_t[]) {256});
+    // Tensor *conv_input = create_tensor_from_file("src/conv2d_input.bin", 4, (size_t[]) {64, 128, 240, 240});
+
+    printf("Done loading conv stuff\n");
+
+    Tensor *conv_output = conv_2d(conv_input, conv_weight, conv_bias, 1);
 
     float val3 = get_tensor_entry_value(conv_input, (size_t[]) {0, 0, 1, 1});
     printf("VAL: %f\n", (double)val3);
 
     printf("CONV_OUTPUT BELOW \n");
     print_tensor(conv_output);
+
+    // Try max_pool_2d
+    Tensor *max_pool_output = max_pool_2d(conv_input, 4, 2);
+
+    // printf("MAX_POOL_OUTPUT BELOW \n");
+    // print_tensor(max_pool_output);
+
+    destroy_tensor(max_pool_output);
 
     destroy_tensor(conv_output);
     destroy_tensor(conv_input);

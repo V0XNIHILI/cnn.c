@@ -16,7 +16,7 @@ Tensor *max_pool_2d(const Tensor *input, size_t pool_size, size_t stride);
 
 Tensor *relu(const Tensor *input);
 
-Tensor *conv_relu_max_pool_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, size_t stride, size_t pool_size);
+Tensor *conv_relu_max_pool_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, size_t conv_stride, size_t pool_size, size_t pool_stride);
 
 Tensor *flatten(const Tensor *input, bool has_batch_dim);
 
