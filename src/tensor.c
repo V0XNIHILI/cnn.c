@@ -110,6 +110,7 @@ void print_tensor(const Tensor *t) {
 
     for (size_t i = 0; i < num_elements; i++) {
         float current_value = t->data[i];
+
         printf("  ");
 
         if (current_value >= 0) {
