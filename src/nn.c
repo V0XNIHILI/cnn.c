@@ -206,6 +206,7 @@ Tensor *relu (const Tensor *input) {
     return output;
 }
 
+// CHECKED
 Tensor *conv_relu_max_pool_2d(const Tensor *input, const Tensor *weight, const Tensor *bias, size_t conv_stride, size_t pool_size, size_t pool_stride) {
     Tensor *conv = conv_2d(input, weight, bias, conv_stride);
     Tensor *relu_tensor = relu(conv);
@@ -217,34 +218,30 @@ Tensor *conv_relu_max_pool_2d(const Tensor *input, const Tensor *weight, const T
 }
 
 Tensor *flatten(const Tensor *input, bool has_batch_dim) {
-    assert(input != NULL);
+    Tensor *copy = copy_tensor(input);
 
-    if (input->n_dims == 1) {
-        return copy_tensor(input);
+    if (has_batch_dim && copy->n_dims != 2) {
+        size_t batch_dim = copy->dims[0];
+
+        copy->n_dims = 2;
+        free(copy->dims);
+        copy->dims = malloc(2 * sizeof *copy->dims);
+        assert(copy->dims != NULL);
+
+        size_t num_elements = get_tensor_element_count(copy);
+
+        copy->dims[0] = batch_dim;
+        copy->dims[1] = num_elements / batch_dim;
+    } else if (!has_batch_dim && copy->n_dims != 1) {
+        copy->n_dims = 1;
+        free(copy->dims);
+        copy->dims = malloc(1 * sizeof *copy->dims);
+        assert(copy->dims != NULL);
+
+        copy->dims[0] = get_tensor_element_count(copy);
     }
 
-    if (has_batch_dim) {
-        assert(input->n_dims >= 2);
-    }
-
-    size_t num_entries = get_tensor_element_count(input) / (has_batch_dim ? input->dims[0] : 1);
-
-    size_t batch_size = has_batch_dim ? input->dims[0] : 1;
-
-    size_t output_dims[] = {batch_size, num_entries};
-
-    Tensor *output = create_tensor(2, output_dims);
-
-    for (size_t b = 0; b < batch_size; b++) {
-        for (size_t i = 0; i < num_entries; i++) {
-            size_t current_input_indices[] = {b, i};
-            size_t current_input_index = get_tensor_entry_index(input, current_input_indices);
-
-            output->data[get_tensor_entry_index(output, current_input_indices)] = input->data[current_input_index];
-        }
-    }
-
-    return remove_batch_size_if_present_from_1d_tensor(output, has_batch_dim);
+    return copy;
 }
 
 // CHECKED!
