@@ -27,6 +27,8 @@ void load_tensor_from_file(const char *filename, Tensor *t);
 
 Tensor *create_tensor_from_file(const char *filename, size_t n_dims, const size_t *dims);
 
+void write_tensor_to_file(const char *filename, const Tensor *t);
+
 void print_tensor(const Tensor *t);
 
 size_t get_tensor_entry_index(const Tensor *t, const size_t *indices);

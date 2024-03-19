@@ -90,6 +90,23 @@ Tensor *create_tensor_from_file(const char *filename, size_t n_dims, const size_
     return t;
 }
 
+// write tensor to file function
+void write_tensor_to_file(const char *filename, const Tensor *t) {
+    assert(filename != NULL);
+    assert(t != NULL);
+
+    FILE *file = fopen(filename, "wb");
+    assert(file != NULL);
+
+    size_t num_elements = get_tensor_element_count(t);
+
+    for (size_t i = 0; i < num_elements; i++) {
+        fwrite(&t->data[i], sizeof(float), 1, file);  // Use fwrite for binary writing
+    }
+
+    fclose(file);
+}
+
 // CHECKED
 void print_tensor(const Tensor *t) {
     assert(t != NULL);
